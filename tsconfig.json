@@ -6,15 +6,7 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "esnext",
-    "paths": {
-      "export-wallet": ["./src/index.ts"]
-    },
     "types": ["node", "vitest/globals"],
-
-    // Other Outputs
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,

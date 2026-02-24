@@ -3,29 +3,37 @@
     "build": "zile",
     "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
     "changeset:version": "changeset version",
+    "export": "node --import tsx src/index.ts",
     "check": "biome check --fix --unsafe",
     "check:types": "tsc",
-    "dev": "zile dev",
     "test": "vitest"
   },
   "devDependencies": {
     "@biomejs/biome": "latest",
     "@changesets/cli": "latest",
     "@types/node": "latest",
+    "@vitest/coverage-v8": "^4.0.18",
+    "ox": "~0.13.1",
+    "prool": "^0.2.2",
+    "testcontainers": "^11.12.0",
+    "tsx": "^4.21.0",
     "typescript": "latest",
+    "viem": "https://pkg.pr.new/viem@c2087f8",
     "vitest": "latest",
     "zile": "latest"
   },
   "packageManager": "pnpm@10.30.2",
   "[!start-pkg]": "",
-  "name": "export-wallet",
+  "name": "export-funds",
+  "description": "CLI to export Tempo assets using an access key.",
   "type": "module",
   "version": "0.0.0",
-  "main": "./src/index.ts",
+  "bin": {
+    "export-funds": "./src/index.ts"
+  },
   "license": "MIT",
-  "files": [
-    "dist",
-    "src"
-  ],
-  "dependencies": {}
+  "dependencies": {
+    "citty": "^0.2.1",
+    "tidx.ts": "^0.1.0"
+  }
 }

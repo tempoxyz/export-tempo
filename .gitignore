@@ -1,3 +1,6 @@
+coverage
 dist
 node_modules
+tasks
+worker-configuration.d.ts
 *.tsbuildinfo
