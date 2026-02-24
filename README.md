@@ -26,14 +26,17 @@ An export key is an access key authorized by your passkey to sign transactions o
 ## CLI Reference
 
 ```
-USAGE export-tempo [OPTIONS]
+USAGE export-tempo [OPTIONS] <EXPORTKEY> to
+
+ARGUMENTS
+  EXPORTKEY    Export key.
 
 OPTIONS
-  --exportKey                         Access key private key (hex).
-  --rpcUrl="https://rpc.tempo.xyz"     Tempo RPC URL.
   --to                                 Recipient address.
+  --rpcUrl="https://rpc.tempo.xyz"     Tempo RPC URL.
   --feeToken                           Fee token address (auto-detected if omitted).
   --tokens                             Comma-separated token addresses to export (all tokens if omitted).
+  --session                            Session blob from a dryrun.
   --confirm                            Execute the transfers.
 ```
 
