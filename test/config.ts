@@ -3,6 +3,7 @@ import { type Client, createClient, defineChain, http, parseUnits, type Transpor
 import { sendTransactionSync } from 'viem/actions'
 import { tempoLocalnet } from 'viem/chains'
 import { Account, Actions } from 'viem/tempo'
+
 import { rpcUrl } from './prool.js'
 
 export const accounts = Array.from({ length: 20 }, (_, i) => {
@@ -86,4 +87,3 @@ export async function setupToken(client: Client, account: Account.RootAccount) {
   } as never)
   return token
 }
-

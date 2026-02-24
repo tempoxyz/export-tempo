@@ -4,16 +4,17 @@
     "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
     "changeset:version": "changeset version",
     "export": "node --import tsx src/index.ts",
-    "check": "biome check --fix --unsafe",
+    "check": "oxlint --fix & oxfmt",
     "check:types": "tsc",
     "test": "vitest"
   },
   "devDependencies": {
-    "@biomejs/biome": "latest",
     "@changesets/cli": "latest",
     "@types/node": "latest",
     "@vitest/coverage-v8": "^4.0.18",
     "ox": "~0.13.1",
+    "oxfmt": "latest",
+    "oxlint": "latest",
     "prool": "^0.2.2",
     "testcontainers": "^11.12.0",
     "tsx": "^4.21.0",
@@ -24,15 +25,16 @@
   },
   "packageManager": "pnpm@10.30.2",
   "[!start-pkg]": "",
-  "name": "export-funds",
+  "name": "export-tempo",
   "description": "CLI to export Tempo assets using an access key.",
   "type": "module",
   "version": "0.0.0",
   "bin": {
-    "export-funds": "./src/index.ts"
+    "export-tempo": "./src/index.ts"
   },
   "license": "MIT",
   "dependencies": {
+    "@clack/prompts": "^1.0.1",
     "citty": "^0.2.1",
     "tidx.ts": "^0.1.0"
   }

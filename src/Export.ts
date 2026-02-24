@@ -1,7 +1,13 @@
 import { Address, P256, Rlp, Secp256k1 } from 'ox'
 import { KeyAuthorization, SignatureEnvelope } from 'ox/tempo'
-import type { Client, Hex } from 'viem'
-import { getBlockNumber, getContractEvents, getTransaction, sendTransactionSync } from 'viem/actions'
+import { maxUint256, type Client, type Hex } from 'viem'
+import {
+  getBlockNumber,
+  getContractEvents,
+  getTransaction,
+  prepareTransactionRequest,
+  sendTransactionSync,
+} from 'viem/actions'
 import { Abis, Account, Actions, Addresses } from 'viem/tempo'
 
 const feeTokens = [
@@ -22,7 +28,10 @@ export async function discover(
   // 2. `<privateKey>:<signedKeyAuth>` — the signed key authorization is RLP-encoded
   //    and contains the root account signature, limits, and key type inline.
   const { account, keyAuthorization, accessKey } = await (async () => {
-    const [privateKey, keyAuthorization_serialized] = options.exportKey.split(':') as [Hex, Hex | undefined]
+    const [privateKey, keyAuthorization_serialized] = options.exportKey.split(':') as [
+      Hex,
+      Hex | undefined,
+    ]
 
     if (keyAuthorization_serialized) {
       // Decode the signed key authorization from the RLP-encoded hex.
@@ -37,7 +46,8 @@ export async function discover(
       })
 
       const accessKey = (() => {
-        if (keyAuthorization.type === 'p256') return Account.fromP256(privateKey, { access: account })
+        if (keyAuthorization.type === 'p256')
+          return Account.fromP256(privateKey, { access: account })
         return Account.fromSecp256k1(privateKey, { access: account })
       })()
 
@@ -105,7 +115,7 @@ export async function discover(
   // Resolve tokens: use supplied list, extract from limits, or walk logs.
   const tokens: Address.Address[] = options.tokens
     ? [...options.tokens]
-    : keyAuthorization.limits?.map((l) => l.token) ?? []
+    : (keyAuthorization.limits?.map((l) => l.token) ?? [])
 
   if (tokens.length === 0) {
     // Walk backwards through blocks to find Transfer events to this account.
@@ -132,17 +142,25 @@ export async function discover(
     }
   }
 
+  // Check if the key has unlimited spending (no limits enforced).
+  const { spendPolicy } = await Actions.accessKey.getMetadata(client, {
+    accessKey: keyAuthorization.address,
+    account,
+  })
+
   // Fetch remaining spending limit, account balance, and AMM liquidity
   // for each token.
   const balances: discover.Balance[] = []
   let feeToken: Address.Address | undefined
   for (const token of tokens) {
     const [limit, balance, metadata, pool] = await Promise.all([
-      Actions.accessKey.getRemainingLimit(client, {
-        accessKey: keyAuthorization.address,
-        account,
-        token,
-      }),
+      spendPolicy === 'unlimited'
+        ? Promise.resolve(maxUint256)
+        : Actions.accessKey.getRemainingLimit(client, {
+            accessKey: keyAuthorization.address,
+            account,
+            token,
+          }),
       Actions.token.getBalance(client, {
         account,
         token,
@@ -186,21 +204,39 @@ export async function discover(
 
 export declare namespace discover {
   type Options = {
+    /**
+     * Access key private key, optionally paired with its signed key authorization.
+     *
+     * - `<privateKey>` — the access key's private key. The root account and key
+     *   type are resolved by walking onchain `KeyAuthorized` events.
+     * - `<privateKey>:<signedKeyAuth>` — the access key's private key followed by
+     *   an RLP-encoded signed key authorization that contains the root account
+     *   signature, spending limits, and key type inline (avoids onchain lookups).
+     */
     exportKey: Hex
+    /** Token addresses to discover. If omitted, all tokens are discovered via onchain logs. */
     tokens?: Address.Address[] | undefined
   }
 
   type Balance = {
+    /** Account balance of the token. */
     balance: bigint
+    /** Remaining spending limit for the access key on this token. */
     limit: bigint
+    /** Token metadata (name, symbol, decimals). */
     metadata: Actions.token.getMetadata.ReturnValue
+    /** Token contract address. */
     token: Address.Address
   }
 
   type ReturnType = {
+    /** The access key account derived from the export key. */
     accessKey: Account.AccessKeyAccount
+    /** The root account address that owns the assets. */
     account: Address.Address
+    /** Token balances and limits for the root account. */
     balances: readonly Balance[]
+    /** Auto-detected fee token address, if any. */
     feeToken: Address.Address | undefined
   }
 }
@@ -213,7 +249,8 @@ export async function execute(
   client: Client,
   options: execute.Options,
 ): Promise<execute.ReturnType> {
-  const { account, feeToken, transfers, to } = options
+  const { account, feeToken, to } = options
+  let { transfers } = options
 
   if (transfers.length === 0) return []
 
@@ -222,10 +259,41 @@ export async function execute(
     Actions.token.transfer.call({ amount, to, token }),
   )
 
-  const { transactionHash: hash } = await sendTransactionSync(client, {
-    account,
+  // Prepare the transaction to get gas estimates.
+  const prepared = await prepareTransactionRequest(client, {
+    account: account as never,
     calls,
     feeToken,
+  } as never)
+
+  // If the fee token is being transferred, reduce its amount to leave
+  // room for gas.
+  const calls_adjusted = await (async () => {
+    if (!feeToken) return calls
+    const feeTokenIndex = transfers.findIndex(
+      (t) => t.token.toLowerCase() === feeToken.toLowerCase(),
+    )
+    if (feeTokenIndex === -1) return calls
+    const feeCostWei = (prepared.gas! * BigInt(prepared.maxFeePerGas!) * 120n) / 100n
+    const { decimals } = await Actions.token.getMetadata(client, { token: feeToken })
+    const feeCost = feeCostWei / 10n ** BigInt(18 - decimals)
+    const original = transfers[feeTokenIndex]!.amount
+    const adjusted = original > feeCost ? original - feeCost : 0n
+    transfers = transfers.map((t, i) => (i === feeTokenIndex ? { ...t, amount: adjusted } : t))
+    return calls.map((c, i) =>
+      i === feeTokenIndex
+        ? Actions.token.transfer.call({
+            amount: adjusted,
+            to,
+            token: transfers[feeTokenIndex]!.token,
+          })
+        : c,
+    )
+  })()
+
+  const { transactionHash: hash } = await sendTransactionSync(client, {
+    ...prepared,
+    calls: calls_adjusted,
   } as never)
 
   return transfers.map(({ token, amount }) => ({

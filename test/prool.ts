@@ -12,10 +12,7 @@ export async function createServer() {
   } satisfies Instance.tempo.Parameters
 
   return Server.create({
-    instance: TestContainers.Instance.tempo({
-      ...args,
-      image: 'ghcr.io/tempoxyz/tempo:sha-580324a',
-    }),
+    instance: TestContainers.Instance.tempo(args),
     port,
   })
 }

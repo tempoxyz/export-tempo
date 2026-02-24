@@ -4,6 +4,7 @@ import { parseUnits } from 'viem'
 import { sendTransactionSync } from 'viem/actions'
 import { Account, Actions } from 'viem/tempo'
 import { describe, expect, test } from 'vitest'
+
 import { account, addresses, getClient, setupAccessKey, setupToken } from '../test/config.js'
 import * as Export from './Export.js'
 
@@ -25,15 +26,11 @@ describe('discover', () => {
     expect(result.account.toLowerCase()).toBe(account.address.toLowerCase())
     expect(result.balances.length).toBe(2)
 
-    const balanceA = result.balances.find(
-      (b) => b.token.toLowerCase() === tokenA.toLowerCase(),
-    )
+    const balanceA = result.balances.find((b) => b.token.toLowerCase() === tokenA.toLowerCase())
     expect(balanceA?.limit).toBe(parseUnits('500', 6))
     expect(balanceA?.balance).toBeGreaterThan(0n)
 
-    const balanceB = result.balances.find(
-      (b) => b.token.toLowerCase() === tokenB.toLowerCase(),
-    )
+    const balanceB = result.balances.find((b) => b.token.toLowerCase() === tokenB.toLowerCase())
     expect(balanceB?.limit).toBe(parseUnits('300', 6))
     expect(balanceB?.balance).toBeGreaterThan(0n)
   })
@@ -72,9 +69,7 @@ describe('discover', () => {
     })
 
     const result = await Export.discover(client, { exportKey: privateKey })
-    const entry = result.balances.find(
-      (b) => b.token.toLowerCase() === token.toLowerCase(),
-    )
+    const entry = result.balances.find((b) => b.token.toLowerCase() === token.toLowerCase())
     expect(entry?.limit).toBe(0n)
   })
 
@@ -97,9 +92,15 @@ describe('discover', () => {
     })
 
     expect(result.balances.length).toBe(2)
-    expect(result.balances.find((b) => b.token.toLowerCase() === tokenA.toLowerCase())).toBeDefined()
-    expect(result.balances.find((b) => b.token.toLowerCase() === tokenB.toLowerCase())).toBeUndefined()
-    expect(result.balances.find((b) => b.token.toLowerCase() === tokenC.toLowerCase())).toBeDefined()
+    expect(
+      result.balances.find((b) => b.token.toLowerCase() === tokenA.toLowerCase()),
+    ).toBeDefined()
+    expect(
+      result.balances.find((b) => b.token.toLowerCase() === tokenB.toLowerCase()),
+    ).toBeUndefined()
+    expect(
+      result.balances.find((b) => b.token.toLowerCase() === tokenC.toLowerCase()),
+    ).toBeDefined()
   })
 
   test('discovers via signed key auth (privateKey:signedKeyAuth)', async () => {
@@ -109,11 +110,7 @@ describe('discover', () => {
       { token: addresses.pathUsd, limit: parseUnits('10', 6) },
     ]
 
-    const { keyAuthorization, privateKey } = await setupAccessKey(
-      client,
-      account,
-      { limits },
-    )
+    const { keyAuthorization, privateKey } = await setupAccessKey(client, account, { limits })
 
     // Serialize and discover via composite key.
     const serialized = KeyAuthorization.serialize(keyAuthorization)
@@ -124,9 +121,7 @@ describe('discover', () => {
     expect(result.account.toLowerCase()).toBe(account.address.toLowerCase())
     expect(result.balances.length).toBe(2)
 
-    const entry = result.balances.find(
-      (b) => b.token.toLowerCase() === token.toLowerCase(),
-    )
+    const entry = result.balances.find((b) => b.token.toLowerCase() === token.toLowerCase())
     expect(entry?.limit).toBe(parseUnits('500', 6))
     expect(entry?.balance).toBeGreaterThan(0n)
   })
@@ -188,9 +183,7 @@ describe('discover', () => {
     expect(result.account.toLowerCase()).toBe(webAuthnRoot.address.toLowerCase())
     expect(result.balances.length).toBe(2)
 
-    const entry = result.balances.find(
-      (b) => b.token.toLowerCase() === token.toLowerCase(),
-    )
+    const entry = result.balances.find((b) => b.token.toLowerCase() === token.toLowerCase())
     expect(entry?.limit).toBe(parseUnits('500', 6))
     expect(entry?.balance).toBeGreaterThan(0n)
   })
@@ -207,10 +200,9 @@ describe('execute', () => {
       ],
     })
 
-    const { accessKey, balances, feeToken } = await Export.discover(
-      client,
-      { exportKey: privateKey },
-    )
+    const { accessKey, balances, feeToken } = await Export.discover(client, {
+      exportKey: privateKey,
+    })
     const transfers = balances
       .filter((b) => b.token !== feeToken)
       .map((b) => ({
@@ -227,9 +219,7 @@ describe('execute', () => {
 
     expect(results.length).toBeGreaterThanOrEqual(1)
 
-    const tokenResult = results.find(
-      (r) => r.token.toLowerCase() === token.toLowerCase(),
-    )
+    const tokenResult = results.find((r) => r.token.toLowerCase() === token.toLowerCase())
     expect(tokenResult?.hash).toBeDefined()
   })
 

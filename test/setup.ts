@@ -1,6 +1,7 @@
 import { parseUnits } from 'viem'
 import { Actions } from 'viem/tempo'
 import { beforeAll } from 'vitest'
+
 import { account, addresses, getClient } from './config.js'
 
 const client = getClient({ account })
