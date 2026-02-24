@@ -10,7 +10,7 @@ import * as Export from './Export.js'
 
 const client = getClient({ account })
 
-describe('discover', () => {
+describe('prepare', () => {
   test('default', async () => {
     const tokenA = await setupToken(client, account)
     const tokenB = await setupToken(client, account)
@@ -21,7 +21,7 @@ describe('discover', () => {
       ],
     })
 
-    const result = await Export.discover(client, { exportKey: privateKey })
+    const result = await Export.prepare(client, { exportKey: privateKey })
 
     expect(result.account.toLowerCase()).toBe(account.address.toLowerCase())
     expect(result.balances.length).toBe(2)
@@ -38,7 +38,7 @@ describe('discover', () => {
   test('unknown private key throws', async () => {
     const privateKey = Secp256k1.randomPrivateKey()
 
-    await expect(Export.discover(client, { exportKey: privateKey })).rejects.toThrow(
+    await expect(Export.prepare(client, { exportKey: privateKey })).rejects.toThrow(
       'No authorized access key found for this private key.',
     )
   })
@@ -54,7 +54,7 @@ describe('discover', () => {
       accessKey: accessKey.accessKeyAddress,
     })
 
-    await expect(Export.discover(client, { exportKey: privateKey })).rejects.toThrow(
+    await expect(Export.prepare(client, { exportKey: privateKey })).rejects.toThrow(
       'Access key is revoked.',
     )
   })
@@ -68,7 +68,7 @@ describe('discover', () => {
       ],
     })
 
-    const result = await Export.discover(client, { exportKey: privateKey })
+    const result = await Export.prepare(client, { exportKey: privateKey })
     const entry = result.balances.find((b) => b.token.toLowerCase() === token.toLowerCase())
     expect(entry?.limit).toBe(0n)
   })
@@ -86,7 +86,7 @@ describe('discover', () => {
     })
 
     // Only request tokenA and tokenC — tokenB should be excluded.
-    const result = await Export.discover(client, {
+    const result = await Export.prepare(client, {
       exportKey: privateKey,
       tokens: [tokenA, tokenC],
     })
@@ -103,7 +103,7 @@ describe('discover', () => {
     ).toBeDefined()
   })
 
-  test('discovers via signed key auth (privateKey:signedKeyAuth)', async () => {
+  test('discovers via composite key (pk_:ka_)', async () => {
     const token = await setupToken(client, account)
     const limits = [
       { token, limit: parseUnits('500', 6) },
@@ -114,9 +114,9 @@ describe('discover', () => {
 
     // Serialize and discover via composite key.
     const serialized = KeyAuthorization.serialize(keyAuthorization)
-    const compositeKey = `${privateKey}:${serialized}` as `0x${string}`
+    const compositeKey = `pk_${privateKey}:ka_${serialized}` as `0x${string}`
 
-    const result = await Export.discover(client, { exportKey: compositeKey })
+    const result = await Export.prepare(client, { exportKey: compositeKey })
 
     expect(result.account.toLowerCase()).toBe(account.address.toLowerCase())
     expect(result.balances.length).toBe(2)
@@ -176,9 +176,9 @@ describe('discover', () => {
 
     // Discover via composite key.
     const serialized = KeyAuthorization.serialize(keyAuthorization)
-    const compositeKey = `${accessKeyPrivateKey}:${serialized}` as `0x${string}`
+    const compositeKey = `pk_${accessKeyPrivateKey}:ka_${serialized}` as `0x${string}`
 
-    const result = await Export.discover(client, { exportKey: compositeKey })
+    const result = await Export.prepare(client, { exportKey: compositeKey })
 
     expect(result.account.toLowerCase()).toBe(webAuthnRoot.address.toLowerCase())
     expect(result.balances.length).toBe(2)
@@ -200,7 +200,7 @@ describe('execute', () => {
       ],
     })
 
-    const { accessKey, balances, feeToken } = await Export.discover(client, {
+    const { accessKey, balances, feeToken } = await Export.prepare(client, {
       exportKey: privateKey,
     })
     const transfers = balances
@@ -226,7 +226,7 @@ describe('execute', () => {
   test('returns empty for no transfers', async () => {
     const { privateKey } = await setupAccessKey(client, account)
 
-    const { accessKey } = await Export.discover(client, { exportKey: privateKey })
+    const { accessKey } = await Export.prepare(client, { exportKey: privateKey })
     const results = await Export.execute(client, {
       account: accessKey,
       to: '0x0000000000000000000000000000000000000069',
@@ -246,7 +246,7 @@ describe('execute', () => {
       ],
     })
 
-    const { accessKey, feeToken } = await Export.discover(client, { exportKey: privateKey })
+    const { accessKey, feeToken } = await Export.prepare(client, { exportKey: privateKey })
 
     const results = await Export.execute(client, {
       account: accessKey,
@@ -270,7 +270,7 @@ describe('execute', () => {
       ],
     })
 
-    const { accessKey, feeToken } = await Export.discover(client, { exportKey: privateKey })
+    const { accessKey, feeToken } = await Export.prepare(client, { exportKey: privateKey })
 
     const results = await Export.execute(client, {
       account: accessKey,
