@@ -2,13 +2,14 @@
 
 import * as p from '@clack/prompts'
 import { defineCommand, runMain } from 'citty'
-import { type Address, createClient, formatUnits, http } from 'viem'
-import { tempo } from 'viem/chains'
+import { type Address, createClient, defineChain, formatUnits, http } from 'viem'
+import { getChainId } from 'viem/actions'
 import { Account } from 'viem/tempo'
 
 import pkg from '../package.json' with { type: 'json' }
 import * as Export from './Export.js'
 import * as Session from './Session.js'
+import { tempo } from 'viem/chains'
 
 const main = defineCommand({
   meta: {
@@ -53,9 +54,14 @@ const main = defineCommand({
   async run({ args }) {
     p.intro('Tempo Export')
 
+    const transport = http(args.rpcUrl)
+    const chainId = await getChainId(createClient({ transport }))
     const client = createClient({
-      chain: tempo,
-      transport: http(args.rpcUrl),
+      chain: defineChain({
+        ...tempo,
+        id: chainId,
+      }),
+      transport,
     })
 
     const exportKey = args.exportKey as `0x${string}`
@@ -64,7 +70,7 @@ const main = defineCommand({
     if (args.confirm && args.session) {
       const session = Session.decode(args.session)
 
-      const [privateKey] = exportKey.split(':') as [`0x${string}`]
+      const { privateKey, keyAuthorization } = Export.parseKey(exportKey)
       const accessKey =
         session.keyType === 'p256'
           ? Account.fromP256(privateKey, { access: session.account })
@@ -87,6 +93,9 @@ const main = defineCommand({
       const results = await Export.execute(client, {
         account: accessKey,
         feeToken,
+        keyAuthorization: keyAuthorization
+          ? Export.decodeKeyAuthorization(keyAuthorization)
+          : undefined,
         to: args.to as Address,
         transfers,
       })
@@ -108,7 +117,7 @@ const main = defineCommand({
       const hash = results[0]?.hash
       const explorer = args.rpcUrl.includes('moderato')
         ? 'https://explore.moderato.tempo.xyz'
-        : client.chain?.blockExplorers?.default?.url ?? 'https://explore.mainnet.tempo.xyz'
+        : 'https://explore.mainnet.tempo.xyz'
       p.outro(hash ? `\u001b]8;;${explorer}/tx/${hash}\u0007${explorer}/tx/${hash}\u001b]8;;\u0007` : 'Done')
       return
     }
@@ -117,7 +126,7 @@ const main = defineCommand({
 
     s.start('Loading account...')
 
-    const result = await Export.discover(client, { exportKey })
+    const result = await Export.prepare(client, { exportKey })
 
     s.stop('Account loaded.')
 
@@ -200,6 +209,7 @@ const main = defineCommand({
     const results = await Export.execute(client, {
       account: result.accessKey,
       feeToken,
+      keyAuthorization: result.keyAuthorization,
       to: args.to as Address,
       transfers,
     })
@@ -223,7 +233,7 @@ const main = defineCommand({
     const hash = results[0]?.hash
     const explorer = args.rpcUrl.includes('moderato')
       ? 'https://explore.moderato.tempo.xyz'
-      : client.chain?.blockExplorers?.default?.url ?? 'https://explore.mainnet.tempo.xyz'
+      : 'https://explore.mainnet.tempo.xyz'
     p.outro(hash ? `\u001b]8;;${explorer}/tx/${hash}\u0007${explorer}/tx/${hash}\u001b]8;;\u0007` : 'Done')
   },
 })

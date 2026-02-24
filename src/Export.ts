@@ -19,24 +19,21 @@ const feeTokens = [
  * Discovers the root account, access key type, and token balances eligible
  * for export from a given access key private key.
  */
-export async function discover(
+export async function prepare(
   client: Client,
-  options: discover.Options,
-): Promise<discover.ReturnType> {
+  options: prepare.Options,
+): Promise<prepare.ReturnType> {
   // Parse the export key input. Supports two formats:
-  // 1. `<privateKey>` — requires walking onchain logs to find the root account.
-  // 2. `<privateKey>:<signedKeyAuth>` — the signed key authorization is RLP-encoded
-  //    and contains the root account signature, limits, and key type inline.
+   // 1. `<privateKey>` — requires walking onchain logs to find the root account.
+   // 2. `pk_<privateKey>:ka_<signedKeyAuth>` — composite format where the signed
+   //    key authorization contains the root account signature, limits, and key type.
   const { account, keyAuthorization, accessKey } = await (async () => {
-    const [privateKey, keyAuthorization_serialized] = options.exportKey.split(':') as [
-      Hex,
-      Hex | undefined,
-    ]
+    const { privateKey, keyAuthorization: keyAuthorization_serialized } = parseKey(
+      options.exportKey,
+    )
 
     if (keyAuthorization_serialized) {
-      // Decode the signed key authorization from the RLP-encoded hex.
-      const tuple = Rlp.toHex(keyAuthorization_serialized) as KeyAuthorization.Tuple<true>
-      const keyAuthorization = KeyAuthorization.fromTuple(tuple)
+      const keyAuthorization = decodeKeyAuthorization(keyAuthorization_serialized)
 
       // Derive the root account address from the signature envelope.
       const account = SignatureEnvelope.extractAddress({
@@ -150,7 +147,7 @@ export async function discover(
 
   // Fetch remaining spending limit, account balance, and AMM liquidity
   // for each token.
-  const balances: discover.Balance[] = []
+  const balances: prepare.Balance[] = []
   let feeToken: Address.Address | undefined
   for (const token of tokens) {
     const [limit, balance, metadata, pool] = await Promise.all([
@@ -199,22 +196,24 @@ export async function discover(
     accessKey,
     balances,
     feeToken,
+    keyAuthorization: 'signature' in keyAuthorization ? keyAuthorization : undefined,
   }
 }
 
-export declare namespace discover {
+export declare namespace prepare {
   type Options = {
     /**
      * Access key private key, optionally paired with its signed key authorization.
      *
      * - `<privateKey>` — the access key's private key. The root account and key
      *   type are resolved by walking onchain `KeyAuthorized` events.
-     * - `<privateKey>:<signedKeyAuth>` — the access key's private key followed by
-     *   an RLP-encoded signed key authorization that contains the root account
-     *   signature, spending limits, and key type inline (avoids onchain lookups).
+     * - `pk_<privateKey>:ka_<signedKeyAuth>` — composite format with the access
+     *   key's private key and an RLP-encoded signed key authorization that
+     *   contains the root account signature, spending limits, and key type
+     *   inline (avoids onchain lookups).
      */
     exportKey: Hex
-    /** Token addresses to discover. If omitted, all tokens are discovered via onchain logs. */
+    /** Token addresses to check. If omitted, all tokens are discovered via onchain logs. */
     tokens?: Address.Address[] | undefined
   }
 
@@ -238,6 +237,8 @@ export declare namespace discover {
     balances: readonly Balance[]
     /** Auto-detected fee token address, if any. */
     feeToken: Address.Address | undefined
+    /** Signed key authorization, if the export key included one with a signature. */
+    keyAuthorization: KeyAuthorization.KeyAuthorization<true> | undefined
   }
 }
 
@@ -249,7 +250,7 @@ export async function execute(
   client: Client,
   options: execute.Options,
 ): Promise<execute.ReturnType> {
-  const { account, feeToken, to } = options
+  const { account, feeToken, keyAuthorization, to } = options
   let { transfers } = options
 
   if (transfers.length === 0) return []
@@ -264,6 +265,7 @@ export async function execute(
     account: account as never,
     calls,
     feeToken,
+    keyAuthorization,
   } as never)
 
   // If the fee token is being transferred, reduce its amount to leave
@@ -307,6 +309,7 @@ export declare namespace execute {
   type Options = {
     account: Account.Account
     feeToken?: Address.Address | undefined
+    keyAuthorization?: KeyAuthorization.KeyAuthorization<true> | undefined
     transfers: readonly {
       token: Address.Address
       amount: bigint
@@ -319,6 +322,35 @@ export declare namespace execute {
     amount: bigint
     hash: `0x${string}`
   }[]
+}
+
+/**
+ * Parses an export key string into its private key and optional key authorization parts.
+ *
+ * Supports two formats:
+ * - `<privateKey>` — bare private key hex.
+ * - `pk_<privateKey>:ka_<keyAuth>` — composite format with prefixed parts.
+ */
+export function parseKey(key: string): {
+  privateKey: Hex
+  keyAuthorization: Hex | undefined
+} {
+  if (key.startsWith('pk_')) {
+    const parts = key.split(':ka_')
+    return {
+      privateKey: parts[0]!.slice(3) as Hex,
+      keyAuthorization: parts[1] ? (parts[1] as Hex) : undefined,
+    }
+  }
+  return { privateKey: key as Hex, keyAuthorization: undefined }
+}
+
+/**
+ * Decodes an RLP-encoded signed key authorization hex string.
+ */
+export function decodeKeyAuthorization(serialized: Hex): KeyAuthorization.KeyAuthorization<true> {
+  const tuple = Rlp.toHex(serialized) as KeyAuthorization.Tuple<true>
+  return KeyAuthorization.fromTuple(tuple)
 }
 
 // biome-ignore lint/correctness/noUnusedVariables: _
@@ -366,3 +398,4 @@ declare namespace walkLogs {
     }) => Promise<{ continue: boolean; value: logs }>
   }
 }
+
