@@ -106,7 +106,7 @@ export async function prepare(
       | { address: Address.Address; limits: readonly KeyAuthorization.TokenLimit[] }
       | undefined
 
-    return { account, keyAuthorization: { address: publicKey, ...keyAuthorization }, accessKey }
+    return { account, keyAuthorization: { address: publicKey, limits: keyAuthorization?.limits }, accessKey }
   })()
 
   // Resolve tokens: use supplied list, extract from limits, or walk logs.
