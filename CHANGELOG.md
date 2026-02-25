@@ -1,5 +1,11 @@
 # export-tempo
 
+## 0.2.1
+
+### Patch Changes
+
+- 93f8003: Removed package.json import from CLI entry point.
+
 ## 0.2.0
 
 ### Minor Changes
