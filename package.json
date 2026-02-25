@@ -12,14 +12,12 @@
     "@changesets/cli": "latest",
     "@types/node": "latest",
     "@vitest/coverage-v8": "^4.0.18",
-    "ox": "~0.13.1",
     "oxfmt": "latest",
     "oxlint": "latest",
     "prool": "^0.2.2",
     "testcontainers": "^11.12.0",
     "tsx": "^4.21.0",
     "typescript": "latest",
-    "viem": "^2.46.3",
     "vitest": "latest",
     "zile": "latest"
   },
@@ -37,7 +35,9 @@
   "dependencies": {
     "@clack/prompts": "^1.0.1",
     "citty": "^0.2.1",
-    "tidx.ts": "^0.1.0"
+    "ox": "~0.13.1",
+    "tidx.ts": "^0.1.0",
+    "viem": "^2.46.3"
   },
   "sideEffects": false,
   "exports": {}
