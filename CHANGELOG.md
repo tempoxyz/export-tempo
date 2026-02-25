@@ -1,5 +1,11 @@
 # export-tempo
 
+## 0.2.2
+
+### Patch Changes
+
+- e8bc186: Moved `ox` and `viem` from devDependencies to dependencies.
+
 ## 0.2.1
 
 ### Patch Changes

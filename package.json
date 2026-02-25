@@ -26,7 +26,7 @@
   "name": "export-tempo",
   "description": "CLI to export Tempo assets using an access key.",
   "type": "module",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "bin": {
     "export-tempo": "./dist/index.js",
     "export-tempo.src": "./src/index.ts"
