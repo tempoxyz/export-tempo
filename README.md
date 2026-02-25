@@ -2,6 +2,18 @@
 
 CLI to export token balances authorized for an export key (access key) on Tempo to a recipient address.
 
+## Quickprompt
+
+Install the skill:
+
+```
+npx skills add tempoxyz/export-tempo
+```
+
+Then prompt your agent:
+
+> Export my Tempo wallet
+
 ## Usage
 
 By default, `export-tempo` dryruns the export — showing the tokens available to export and their amounts.
