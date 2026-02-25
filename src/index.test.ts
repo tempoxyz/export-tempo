@@ -16,11 +16,11 @@ test('prints balances in dryrun mode', async () => {
 
   const { stdout } = await cli([privateKey, '--to', account.address, '--rpcUrl', rpcUrl])
 
-  expect(stdout).toContain(`Root account: ${account.address}`)
-  expect(stdout).toContain('Balances:')
+  expect(stdout).toContain(`Account: ${account.address}`)
+  expect(stdout).toContain('Exportable:')
   expect(stdout).toContain('TST')
   expect(stdout).toContain('500')
-  expect(stdout).not.toContain('Done:')
+  expect(stdout).not.toContain('Exported to')
 })
 
 test('prints session blob in dryrun mode', async () => {
@@ -34,7 +34,7 @@ test('prints session blob in dryrun mode', async () => {
 
   const { stdout } = await cli([privateKey, '--to', account.address, '--rpcUrl', rpcUrl])
 
-  expect(stdout).toContain('Session:')
+  expect(stdout).toContain('--session')
   const blob = extractSession(stdout)
   expect(blob).toBeTruthy()
 })
@@ -65,8 +65,7 @@ test('executes transfers with session blob', async () => {
     blob,
   ])
 
-  expect(stdout).toContain('Done:')
-  expect(stdout).toContain('tx: 0x')
+  expect(stdout).toContain('Exported to')
 
   const balance = await Actions.token.getBalance(client, {
     account: recipient,
@@ -101,8 +100,7 @@ test('executes multiple token transfers with session blob', async () => {
     blob,
   ])
 
-  expect(stdout).toContain('Done:')
-  expect(stdout).toContain('tx: 0x')
+  expect(stdout).toContain('Exported to')
 
   const balanceA = await Actions.token.getBalance(client, {
     account: recipient,
@@ -129,10 +127,9 @@ test('exports tokens with --confirm (no session blob)', async () => {
 
   const { stdout } = await cli([privateKey, '--to', recipient, '--rpcUrl', rpcUrl, '--confirm'])
 
-  expect(stdout).toContain('Root account:')
-  expect(stdout).toContain('Balances:')
-  expect(stdout).toContain('Done:')
-  expect(stdout).toContain('tx: 0x')
+  expect(stdout).toContain('Account:')
+  expect(stdout).toContain('Exportable:')
+  expect(stdout).toContain('Exported to')
 
   const balance = await Actions.token.getBalance(client, {
     account: recipient,
@@ -155,8 +152,7 @@ test('exports multiple tokens with --confirm (no session blob)', async () => {
 
   const { stdout } = await cli([privateKey, '--to', recipient, '--rpcUrl', rpcUrl, '--confirm'])
 
-  expect(stdout).toContain('Done:')
-  expect(stdout).toContain('tx: 0x')
+  expect(stdout).toContain('Exported to')
 
   const balanceA = await Actions.token.getBalance(client, {
     account: recipient,
@@ -211,7 +207,7 @@ test('filters to single token with --tokens', async () => {
     '--confirm',
   ])
 
-  expect(stdout).toContain('Done:')
+  expect(stdout).toContain('Exported to')
 
   const balanceA = await Actions.token.getBalance(client, {
     account: recipient,
@@ -251,7 +247,7 @@ test('filters to multiple comma-separated tokens with --tokens', async () => {
     '--confirm',
   ])
 
-  expect(stdout).toContain('Done:')
+  expect(stdout).toContain('Exported to')
 
   const balanceA = await Actions.token.getBalance(client, {
     account: recipient,
@@ -273,7 +269,7 @@ test('filters to multiple comma-separated tokens with --tokens', async () => {
 })
 
 function extractSession(stdout: string): string {
-  const match = stdout.match(/Session: (.+)/)
+  const match = stdout.match(/--session\s+(\S+)/)
   if (!match?.[1]) throw new Error('No session blob found in output')
   return match[1].trim()
 }
