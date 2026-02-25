@@ -30,12 +30,15 @@
   "type": "module",
   "version": "0.0.0",
   "bin": {
-    "export-tempo": "./src/index.ts"
+    "export-tempo": "./dist/index.js",
+    "export-tempo.src": "./src/index.ts"
   },
   "license": "MIT",
   "dependencies": {
     "@clack/prompts": "^1.0.1",
     "citty": "^0.2.1",
     "tidx.ts": "^0.1.0"
-  }
+  },
+  "sideEffects": false,
+  "exports": {}
 }
