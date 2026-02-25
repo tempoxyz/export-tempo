@@ -6,16 +6,13 @@ import { type Address, createClient, defineChain, formatUnits, http } from 'viem
 import { getChainId } from 'viem/actions'
 import { Account } from 'viem/tempo'
 
-import pkg from '../package.json' with { type: 'json' }
 import * as Export from './Export.js'
 import * as Session from './Session.js'
 import { tempo } from 'viem/chains'
 
 const main = defineCommand({
   meta: {
-    name: pkg.name,
-    description: pkg.description,
-    version: pkg.version,
+    name: 'tempo-export',
   },
   args: {
     exportKey: {
