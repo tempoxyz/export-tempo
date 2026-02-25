@@ -14,9 +14,15 @@ importers:
       citty:
         specifier: ^0.2.1
         version: 0.2.1
+      ox:
+        specifier: ~0.13.1
+        version: 0.13.1(typescript@5.9.3)(zod@4.3.6)
       tidx.ts:
         specifier: ^0.1.0
         version: 0.1.0(typescript@5.9.3)
+      viem:
+        specifier: ^2.46.3
+        version: 2.46.3(typescript@5.9.3)(zod@4.3.6)
     devDependencies:
       '@changesets/cli':
         specifier: latest
@@ -27,9 +33,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.0.18
         version: 4.0.18(vitest@4.0.18(@types/node@25.3.0)(tsx@4.21.0)(yaml@2.8.2))
-      ox:
-        specifier: ~0.13.1
-        version: 0.13.1(typescript@5.9.3)(zod@4.3.6)
       oxfmt:
         specifier: latest
         version: 0.35.0
@@ -48,9 +51,6 @@ importers:
       typescript:
         specifier: latest
         version: 5.9.3
-      viem:
-        specifier: ^2.46.3
-        version: 2.46.3(typescript@5.9.3)(zod@4.3.6)
       vitest:
         specifier: latest
         version: 4.0.18(@types/node@25.3.0)(tsx@4.21.0)(yaml@2.8.2)
