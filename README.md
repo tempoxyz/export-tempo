@@ -23,6 +23,8 @@ An export key is an access key authorized by your passkey to sign transactions o
 - **From `wallet.tempo.xyz`:** navigate to **Key Management**, select **Create New Key**, and authenticate with your passkey. The key is displayed once – copy and store it securely.
 - **If your account can't be serviced:** you will be prompted with a button to export your key. The key is displayed once – copy and store it securely.
 
+[Learn more](https://app.moderato.tempo.xyz/support/key-exports)
+
 ## CLI Reference
 
 ```
