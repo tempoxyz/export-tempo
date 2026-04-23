@@ -1,0 +1,12 @@
+strictDepBuilds: true
+blockExoticSubdeps: true
+minimumReleaseAge: 1440
+trustPolicy: no-downgrade
+
+onlyBuiltDependencies:
+  - esbuild
+
+ignoredBuiltDependencies:
+  - cpu-features
+  - protobufjs
+  - ssh2
