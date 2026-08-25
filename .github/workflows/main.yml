@@ -16,28 +16,33 @@ jobs:
   changesets:
     name: Changesets
     needs: verify
-    # The version PR is opened with a short-lived GitHub App token minted via
-    # the github-sts action (authorized by .github/sts/changesets.sts.yaml);
-    # the built-in GITHUB_TOKEN is not allowed to create pull requests.
-    # id-token also feeds npm trusted publishing.
+    # The version PR and the version-branch push both use a short-lived
+    # GitHub App token minted via the github-sts action (authorized by
+    # .github/sts/changesets.sts.yaml): the built-in GITHUB_TOKEN is not
+    # allowed to create pull requests, and a push made with it would not
+    # trigger the PR's verification workflows, so checkout persists the App
+    # token for the action's git push. id-token also feeds npm trusted
+    # publishing.
     permissions:
-      contents: write
+      contents: read
       id-token: write
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
-
       - name: Fetch GitHub token via STS
         id: sts
         uses: tempoxyz/gh-actions/actions/github-sts@183a02178c660ce295e9a262edc5857cb7135f06 # main
         with:
           policy: changesets
+
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.sts.outputs.token }}
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
 
       - name: PR or publish
         id: changesets
