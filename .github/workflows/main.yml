@@ -46,7 +46,7 @@ jobs:
 
       - name: PR or publish
         id: changesets
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1
+        uses: tempoxyz/gh-actions/vendor/changesets/action@6f436eb3a168279692739e8c0c9fdb52b94bfae7
         with:
           title: 'chore: version packages'
           commit: 'chore: version packages'
